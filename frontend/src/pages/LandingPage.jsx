@@ -12,7 +12,7 @@ const LandingPage = () => {
       <div className="absolute bottom-[-50%] left-[-10%] w-[800px] h-[600px] bg-[#FF366F] rounded-full mix-blend-multiply filter blur-[120px] opacity-40 animate-blob animation-delay-2000"></div>
       <div className="absolute inset-0 bg-white/20 backdrop-blur-[1px]"></div>
 
-      {/* --- Navbar --- */}
+      {/* Navbar */}
       <nav className="relative z-10 flex justify-between items-center px-8 md:px-16 py-6">
         <div className="text-3xl font-bold text-primary tracking-tight">
           Flowin
@@ -33,7 +33,7 @@ const LandingPage = () => {
       </nav>
 
 
-      {/* --- Main Content --- */}
+      {/* Main Content */}
       <main className="relative z-10 flex flex-1 items-center justify-between px-8 md:px-16 pb-10">
         <div className="w-full md:w-1/2 flex flex-col gap-6">
           <motion.h1 

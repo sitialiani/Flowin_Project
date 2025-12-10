@@ -1,29 +1,84 @@
-import React, { useState, useEffect, useRef } from 'react'; // <--- TAMBAHKAN useRef DISINI
+import React, { useState, useEffect, useRef } from 'react'; 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Upload, X, FileText, CheckCircle, ArrowRight, ArrowLeft } from 'lucide-react'; // Tambah icon Arrow
+import { Upload, X, FileText, CheckCircle, ArrowRight, ArrowLeft, Loader2, AlertCircle } from 'lucide-react'; 
 
 const InputData = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
-  // State Management
+  // state manajemen
   const [file, setFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [showError, setShowError] = useState(false);
+  const [showError, setShowError] = useState(false); 
   const [showFormatInfo, setShowFormatInfo] = useState(false);
+  const [uploading, setUploading] = useState(false); 
+  const [errorMsg, setErrorMsg] = useState('');      
+  const [previewData, setPreviewData] = useState([]); 
+  const [columns, setColumns] = useState([]);         
+  const [datasetInfo, setDatasetInfo] = useState(null);
 
   const allowedExtensions = ['csv', 'xlsx', 'xls', 'json', 'txt'];
 
+  useEffect(() => {
+    localStorage.removeItem('prep_steps');
+    localStorage.removeItem('prep_showResult');
+    localStorage.removeItem('analysis_k');
+    localStorage.removeItem('analysis_showResult');
+    localStorage.removeItem('uploaded_filename'); 
+  }, []);
+
+  // upload ke django
+  const uploadFileToBackend = async (selectedFile) => {
+    setUploading(true);
+    setErrorMsg('');
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/upload/', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setFile(selectedFile);
+        setPreviewData(data.preview); 
+        setColumns(data.columns);     
+        setDatasetInfo({ rows: data.total_rows, cols: data.total_cols });
+        
+        localStorage.setItem('uploaded_filename', data.filename);
+      } else {
+        setErrorMsg(data.error || 'Gagal mengupload file.');
+        setFile(null);
+      }
+    } catch (error) {
+      console.error("Error upload:", error);
+      setErrorMsg('Gagal terhubung ke server Backend. Pastikan Django sudah jalan!');
+      setFile(null);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const validateAndSetFile = (selectedFile) => {
     if (!selectedFile) return;
+
+    if (selectedFile.size > 100 * 1024 * 1024) {
+      alert("Ukuran file terlalu besar! Maksimal 100 MB."); 
+      return; 
+    }
+
     const extension = selectedFile.name.split('.').pop().toLowerCase();
     
     if (allowedExtensions.includes(extension)) {
-      setFile(selectedFile);
       setShowError(false);
+      uploadFileToBackend(selectedFile);
     } else {
-      setShowError(true);
+      setShowError(true); 
       setFile(null);
     }
   };
@@ -36,19 +91,11 @@ const InputData = () => {
   };
 
   const pageTransition = {
-    initial: { opacity: 0, x: 20 }, // Konsisten animasi slide horizontal
+    initial: { opacity: 0, x: 20 },
     animate: { opacity: 1, x: 0 },
     exit: { opacity: 0, x: -20 },
     transition: { duration: 0.5 }
   };
-
-  // BERSIHKAN MEMORI SAAT MASUK HALAMAN INI
-  useEffect(() => {
-    localStorage.removeItem('prep_steps');
-    localStorage.removeItem('prep_showResult');
-    localStorage.removeItem('analysis_k');
-    localStorage.removeItem('analysis_showResult');
-  }, []);
 
   return (
     <motion.div 
@@ -56,11 +103,11 @@ const InputData = () => {
       initial="initial"
       animate="animate"
       exit="exit"
-      className="min-h-screen bg-white font-sans flex flex-col pb-24" // pb-24 agar tidak ketutup footer
+      className="min-h-screen bg-white font-sans flex flex-col pb-24"
     >
       
       {/* Navbar */}
-      <nav className="flex justify-between items-center px-8 md:px-16 py-6 border-b border-gray-100 bg-white sticky top-0 z-20">
+      <nav className="flex justify-between items-center px-8 md:px-16 py-6 bg-white z-20 sticky top-0">
         <button onClick={() => navigate('/')} className="text-3xl font-bold text-primary tracking-tight">Flowin</button>
         <div className="flex gap-8 font-medium text-lg">
           <button onClick={() => navigate('/')} className="text-gray-500 hover:text-primary transition-colors">Beranda</button>
@@ -87,26 +134,49 @@ const InputData = () => {
 
         {/* Area konten */}
         <div className="w-full flex flex-col items-center"> 
-          {!file ? (
-            // Area upload
+          
+          {/* kondisi belum ada file dan tidak loading */}
+          {!file && !uploading ? (
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.5 }}
               className={`w-full max-w-3xl h-72 border-2 border-dashed rounded-3xl flex flex-col items-center justify-center cursor-pointer transition-all duration-300
-                ${isDragging ? 'border-primary bg-pink-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'}`}
+                ${isDragging ? 'border-primary bg-pink-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'}
+                ${errorMsg ? 'border-red-300 bg-red-50' : ''}`}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current.click()}
             >
               <input type="file" ref={fileInputRef} onChange={(e) => validateAndSetFile(e.target.files[0])} className="hidden" accept=".csv,.xlsx,.xls,.json,.txt"/>
-              <Upload className="w-16 h-16 text-gray-400 mb-4" />
-              <p className="text-gray-700 text-xl font-medium">Unggah dataset kamu di sini</p>
-              <p className="text-gray-400 mt-2">atau <span className="underline decoration-gray-400">klik untuk menjelajah</span></p>
+              
+              {/* menampilkan jika ada error koneksi BE */}
+              {errorMsg ? (
+                 <div className="text-center">
+                    <AlertCircle className="w-12 h-12 text-red-400 mb-2 mx-auto" />
+                    <p className="text-red-500 font-bold mb-1">Gagal Upload</p>
+                    <p className="text-red-400 text-sm">{errorMsg}</p>
+                 </div>
+              ) : (
+                 <>
+                    <Upload className="w-16 h-16 text-gray-400 mb-4" />
+                    <p className="text-gray-700 text-xl font-medium">Unggah dataset kamu di sini</p>
+                    <p className="text-gray-400 mt-2">atau <span className="underline decoration-gray-400">klik untuk menjelajah</span></p>
+                 </>
+              )}
             </motion.div>
+
+          /* kondisi sedang loading */
+          ) : uploading ? (
+            <div className="w-full max-w-3xl h-72 rounded-3xl flex flex-col items-center justify-center bg-white border border-gray-200 shadow-sm">
+               <Loader2 className="w-16 h-16 text-primary animate-spin mb-4" />
+               <p className="text-gray-800 font-bold text-lg">Sedang Memproses...</p>
+               <p className="text-gray-500 text-sm">Mengirim data ke server...</p>
+            </div>
+
+          /* kondisi berhasil dari backend */
           ) : (
-            // Preview Data (Setelah file dipilih)
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -118,9 +188,12 @@ const InputData = () => {
                   <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary">
                     <FileText className="w-5 h-5" />
                   </div>
-                  <span className="font-medium text-gray-800 text-lg">{file.name}</span>
+                  <div>
+                    <span className="font-medium text-gray-800 text-lg block leading-none">{file.name}</span>
+                    {datasetInfo && <span className="text-xs text-gray-500">{datasetInfo.rows} Baris • {datasetInfo.cols} Kolom</span>}
+                  </div>
                 </div>
-                <button onClick={() => setFile(null)} className="hover:bg-gray-100 p-2 rounded-full text-gray-400 hover:text-red-500 transition-colors">
+                <button onClick={() => { setFile(null); setPreviewData([]); }} className="hover:bg-gray-100 p-2 rounded-full text-gray-400 hover:text-red-500 transition-colors">
                   <X className="w-6 h-6" />
                 </button>
               </div>
@@ -130,34 +203,36 @@ const InputData = () => {
                 <table className="w-full text-left border-collapse min-w-[600px]">
                   <thead className="bg-gray-50">
                     <tr>
-                      {['ID', 'Steps', 'Heart Rate', 'Sleep (Hrs)', 'Calories', 'Date'].map((head) => (
-                        <th key={head} className="p-4 font-bold text-gray-700 border-b text-sm uppercase tracking-wider">{head}</th>
+                      <th className="p-4 font-bold text-gray-700 border-b text-sm uppercase tracking-wider">#</th>
+                      {/* Render nama kolom */}
+                      {columns.map((col, idx) => (
+                        <th key={idx} className="p-4 font-bold text-gray-700 border-b text-sm uppercase tracking-wider whitespace-nowrap">{col}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody className="text-gray-600">
-                    {[...Array(5)].map((_, i) => (
+                    {/* Render baris data */}
+                    {previewData.map((row, i) => (
                       <tr key={i} className="hover:bg-pink-50 transition-colors border-b last:border-0">
-                        <td className="p-4 font-medium">#00{i + 1}</td>
-                        <td className="p-4">{Math.floor(Math.random() * 10000)}</td>
-                        <td className="p-4">{70 + Math.floor(Math.random() * 30)} bpm</td>
-                        <td className="p-4">{(5 + Math.random() * 4).toFixed(1)} h</td>
-                        <td className="p-4">{2000 + Math.floor(Math.random() * 500)} kcal</td>
-                        <td className="p-4">2023-10-{10 + i}</td>
+                        <td className="p-4 font-medium text-xs text-gray-400">{i + 1}</td>
+                        {columns.map((col, j) => (
+                          <td key={j} className="p-4 text-sm whitespace-nowrap">
+                            {row[col] !== null ? row[col] : <span className="italic text-gray-300">NULL</span>}
+                          </td>
+                        ))}
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <p className="text-center text-gray-400 text-sm italic mb-4">*Menampilkan 5 baris pertama dari dataset</p>
+              <p className="text-center text-gray-400 text-sm italic mb-4">*Menampilkan 5 baris pertama dari dataset asli</p>
             </motion.div>
           )}
         </div>
 
       </main>
 
-      {/* --- FOOTER BUTTONS (STICKY) --- */}
-      {/* Menggunakan layout footer yang sama dengan page lain agar konsisten */}
+      {/* footer button */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-gray-100 p-4 z-30">
         <div className="max-w-5xl mx-auto flex gap-4">
           <button 
@@ -180,7 +255,7 @@ const InputData = () => {
         </div>
       </div>
 
-      {/* Pop Up Error & Info */}
+      {/* Pop Up Error (Format Salah) */}
       <AnimatePresence>
         {showError && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, User } from 'lucide-react';
 import sitiPhoto from '../assets/foto-siti.jpg';
-import abePhoto from '../assets/foto-abe.jpg';
+import abePhoto from '../assets/foto-abe.jpeg';
 
 const About = () => {
   const navigate = useNavigate();
@@ -37,9 +37,7 @@ const About = () => {
       exit="exit"
       className="h-screen w-full bg-white font-sans flex flex-col overflow-hidden relative"
     >
-      
-       {/* Background */}
-      
+            
       <motion.div 
         variants={floatAnimation}
         animate="animate"
@@ -62,8 +60,6 @@ const About = () => {
         </div>
       </nav>
 
-
-      {/* Konten utama */}
       <main className="flex-1 flex flex-col items-center justify-center px-4 z-10 w-full max-w-5xl mx-auto h-full pb-20">
         
         {/* Teks header */}
@@ -124,7 +120,6 @@ const About = () => {
 
         </div>
 
-        {/* Text deskripsi web*/}
         <motion.div 
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}

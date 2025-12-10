@@ -9,7 +9,7 @@ import Visualization from './pages/Visualization';
 import About from './pages/About';
 import ScrollToTop from './components/ScrollToTop';
 
-// Komponen Khusus untuk Menangani Animasi Route
+// animated routes
 const AnimatedRoutes = () => {
   const location = useLocation();
 
