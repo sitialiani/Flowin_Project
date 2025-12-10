@@ -52,11 +52,11 @@ const About = () => {
 
 
       {/* Navbar */}
-      <nav className="flex justify-between items-center px-8 md:px-16 py-6 z-20 shrink-0">
+    <nav className="flex justify-between items-center px-8 md:px-16 py-6 bg-white z-20 sticky top-0">
         <button onClick={() => navigate('/')} className="text-3xl font-bold text-primary tracking-tight">Flowin</button>
         <div className="flex gap-8 font-medium text-lg">
           <button onClick={() => navigate('/')} className="text-gray-500 hover:text-primary transition-colors">Beranda</button>
-          <span className="text-primary font-bold cursor-default">Tentang Kami</span>
+          <button onClick={() => navigate('/about')} className="text-gray-500 hover:text-primary transition-colors">Tentang Kami</button>
         </div>
       </nav>
 

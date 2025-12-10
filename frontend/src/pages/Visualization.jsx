@@ -113,10 +113,11 @@ const Visualization = () => {
   return (
     <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="min-h-screen bg-white font-sans flex flex-col pb-24">
       
-      <nav className="flex justify-between items-center px-8 md:px-16 py-6 bg-white z-20 sticky top-0 border-b border-gray-100">
+      <nav className="flex justify-between items-center px-8 md:px-16 py-6 bg-white z-20 sticky top-0">
         <button onClick={() => navigate('/')} className="text-3xl font-bold text-primary tracking-tight">Flowin</button>
         <div className="flex gap-8 font-medium text-lg">
           <button onClick={() => navigate('/')} className="text-gray-500 hover:text-primary transition-colors">Beranda</button>
+          <button onClick={() => navigate('/about')} className="text-gray-500 hover:text-primary transition-colors">Tentang Kami</button>
         </div>
       </nav>
 
